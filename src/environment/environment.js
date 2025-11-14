@@ -1,6 +1,6 @@
-import config from "config"
+import config from "config";
 
 export const environment = {
-    server: config.get("server"),
-    logger: config.get('logger')
-}
+  server: config.get("server"),
+  logger: config.get("logger"),
+};
