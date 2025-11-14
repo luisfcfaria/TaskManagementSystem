@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import { authenticateRoutes } from "./routes/auth.routes.js";
+import { taskRoutes } from "./routes/task.routes.js";
 
 const { environment } = await import("./environment/environment.js");
 
@@ -10,6 +12,9 @@ const server = Fastify({
 server.get("/health", { logLevel: "silent" }, (_request, reply) => {
   return reply.send({ status: "OK" });
 });
+
+server.register(authenticateRoutes);
+server.register(taskRoutes);
 
 try {
   await server.listen({ port: environment.server.port });

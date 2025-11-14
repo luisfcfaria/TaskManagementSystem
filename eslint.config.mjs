@@ -1,14 +1,11 @@
 import eslint from "@eslint/js";
 import globals from "globals";
 import prettierPlugin from "eslint-plugin-prettier";
-import prettierConfig from "eslint-config-prettier";
 
 export default eslint.defineConfig([
   {
     root: true,
     ignores: ["eslint.config.mjs", "dist/", "build/", "node_modules/"],
-
-    // Language options
     languageOptions: {
       globals: {
         ...globals.node,
@@ -25,13 +22,9 @@ export default eslint.defineConfig([
       prettier: prettierPlugin,
     },
 
-    extends: [
-      eslint.configs.recommended, // ESLint core recommended rules
-      "prettier", // Prettier integration
-    ],
+    extends: [eslint.configs.recommended, "prettier"],
 
     rules: {
-      // Prettier formatting enforced
       "prettier/prettier": [
         "error",
         {
@@ -46,15 +39,12 @@ export default eslint.defineConfig([
           endOfLine: "lf",
         },
       ],
-
-      // Custom JS rules
       "no-console": "warn",
       "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
       "no-debugger": "error",
     },
 
     overrides: [
-      // Test-specific overrides
       {
         files: ["**/*.test.js", "**/__tests__/**/*.js"],
         rules: {
