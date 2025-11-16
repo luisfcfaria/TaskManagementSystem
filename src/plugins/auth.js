@@ -11,15 +11,21 @@ export const authPlugin = fastifyPlugin(async (fastify, options) => {
   await fastify.register(fastifyJwt, {
     secret,
     sign: {
-      expiresIn: process.env.JWT_EXPIRES_IN ?? "15M",
+      expiresIn: process.env.JWT_EXPIRES_IN ?? "15m",
     },
   });
 
   fastify.decorate("authenticate", async (request, reply) => {
     try {
-      await request.jwtVerify();
+      const payload = await request.jwtVerify();
+      console.log(payload);
+      request.user = {
+        id: payload.sub,
+        username: payload.username,
+        role: payload.role,
+      };
     } catch (err) {
-      reply.code(401).send({
+      return reply.code(401).send({
         code: "AUTH_ERROR",
         message: "Unauthorized",
       });
@@ -28,11 +34,40 @@ export const authPlugin = fastifyPlugin(async (fastify, options) => {
 
   fastify.decorate("requireRole", function (roles = []) {
     return async function (request, reply) {
-      const payload = request.user;
-      if (!payload || !roles.includes(payload.role)) {
-        return reply
-          .code(403)
-          .send({ code: "FORBIDDEN", message: "Forbidden" });
+      const payload = await request.jwtVerify();
+      const userRole = payload.role;
+
+      if (!roles.includes(userRole)) {
+        return reply.code(403).send({
+          code: "FORBIDDEN",
+          message: "Forbidden: insufficient role",
+        });
+      }
+    };
+  });
+
+  fastify.decorate("requireOwnerOrManager", function (getTaskById) {
+    return async function (request, reply) {
+      const payload = await request.jwtVerify();
+      const userRole = payload.role;
+      const user = request.user;
+      const taskId = request.params.id;
+
+      const task = await getTaskById(taskId);
+      if (!task) {
+        return reply.code(404).send({
+          code: "TASK_NOT_FOUND",
+          message: "Task not found",
+        });
+      }
+
+      if (userRole === "MANAGER") return;
+
+      if (userRole === "TECHNICIAN" && task.userId !== user.id) {
+        return reply.code(403).send({
+          code: "FORBIDDEN",
+          message: "Forbidden: you do not own this task",
+        });
       }
     };
   });
@@ -41,7 +76,7 @@ export const authPlugin = fastifyPlugin(async (fastify, options) => {
 export const verifyAuth = fastifyPlugin(async (fastify, opts) => {
   if (!fastify.authenticate) {
     throw new Error(
-      "fastify.authenticate decorator is not registered. Register auth plugin before verifyAuth.",
+      "fastify.authenticate decorator is not registered. Register authPlugin before verifyAuth.",
     );
   }
   fastify.addHook("preHandler", fastify.authenticate);
