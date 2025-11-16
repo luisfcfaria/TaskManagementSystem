@@ -6,11 +6,9 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: schola
+      POSTGRES_DB: task-management
     ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+      - "5433:5432"
 
   grafana:
     image: grafana/grafana
@@ -20,6 +18,3 @@ services:
       GF_LOG_LEVEL: debug
     ports:
       - "3001:3000"
-
-volumes:
-  db_data:
